@@ -1,0 +1,127 @@
+Zustand para React Native
+*************************
+
+Zustand
+=======
+Alternativa a Context API, Redux y Redux Toolkit (RTK) para gestión de estado de una aplicación en conjunto.
+
+Instalación
+-----------
+npm i zustand
+
+Uso básico
+==========
+
+Crear el store
+--------------
+
+profile-store.ts:
+
+import { create } from "zustand";
+
+export interface ProfileState {
+    name: string;
+    email: string;
+}
+
+export const useProfileStore = create<ProfileState>((set, get)=>({
+    name : 'Tino R.',
+    email: 'tino@mail.com',
+    })
+);
+
+Obtener valores del estado actual del store
+-------------------------------------------
+
+ProfileScreen.tsx:
+
+import { Text, View } from 'react-native'
+import { styles } from '../../../config/app-theme'
+import { useProfileStore } from '../../store/profile-store'
+
+export const ProfileScreen = () => {
+
+  const name = useProfileStore(state => state.name);
+  const email = useProfileStore(state => state.email);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{name}</Text>
+      <Text>{email}</Text>
+    </View>
+  )
+}
+
+Cambios en el store
+===================
+
+counter-store.ts:
+
+import { create } from 'zustand'
+
+const INITIAL_VALUE = 10;
+
+interface CounterState {
+  counter : number;
+  incrementValue : (value : number) => void;
+  reset: () => void;
+}
+export const useCounterStore = create<CounterState>((set)=>({
+  counter : INITIAL_VALUE,
+  incrementValue : (value : number) => set(state => ({counter: state.counter + value})),
+  reset: () => set({counter: INITIAL_VALUE}),
+}));
+
+SettingsScreen.tsx:
+
+import {Pressable, Text, View} from 'react-native';
+import { styles } from '../../../config/app-theme';
+import { useCounterStore } from '../../store/counter-store';
+import { useNavigation } from '@react-navigation/native';
+
+export const SettingsScreen = () => {
+
+  const counter = useCounterStore(state => state.counter);
+  const incrementValue = useCounterStore(state => state.incrementValue);
+  const reset = useCounterStore(state => state.reset);
+
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: `Contador: ${counter}`
+    });
+  }, [counter])
+  
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>SettingsScreen</Text>
+      <Pressable
+        style={styles.primaryButton}
+        onPress={() => incrementValue(-1)}
+      >
+        <Text>-1</Text>
+      </Pressable>
+      <Pressable
+        style={styles.primaryButton}
+        onPress={() => incrementValue(1)}
+      >
+        <Text>+1</Text>
+      </Pressable>
+      <Pressable
+        style={styles.primaryButton}
+        onPress={reset}
+      >
+        <Text>Reiniciar contador</Text>
+      </Pressable>
+    </View>
+  );
+};
+
+
+
+
+
+
+

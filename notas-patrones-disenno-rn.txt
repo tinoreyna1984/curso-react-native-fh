@@ -1,0 +1,145 @@
+Patrones de diseño para móviles
+*******************************
+
+Patrón Adapter
+==============
+
+Es un patrón que permite adaptar una clase que no es directamente compatible con otra por medio de la implementación de la interfaz de la primera clase. A la primera clase se le llama "adaptee", la segunda es el "client" y el adaptador es el "adapter". Entonces, se implementa la interfaz de "adaptee" para poder interactuar con "client" a través de "adapter".
+
+"adaptee":
+
+export abstract class HttpAdapter {
+  abstract get<T>(url: string, options?: Record<string, unknown>): Promise<T>;
+}
+
+
+"adapter":
+
+import axios, {AxiosInstance} from 'axios';
+import {HttpAdapter} from './http.adapter';
+
+interface Options {
+  baseUrl: string;
+  params: Record<string, string>;
+}
+
+export class AxiosAdapter implements HttpAdapter {
+  private axiosInstance: AxiosInstance;
+
+  constructor(options: Options) {
+    this.axiosInstance = axios.create({
+      baseURL: options.baseUrl,
+      params: options.params,
+    });
+  }
+
+  async get<T>(
+    url: string,
+    options?: Record<string, unknown> | undefined,
+  ): Promise<T> {
+    try {
+      const {data} = await this.axiosInstance.get<T>(url, options);
+
+      return data;
+    } catch (error) {
+      throw new Error(`Error fetching get: ${url} `);
+    }
+  }
+}
+
+"target":
+
+import {AxiosAdapter} from './http/axios.adapter';
+
+export const movieDBFetcher = new AxiosAdapter({
+  baseUrl: 'https://api.themoviedb.org/3/movie',
+  params: {
+    api_key: '9d6a90c2b95d4a700ee5cb9705c94b0f',
+    language: 'es',
+  },
+});
+
+Patrón Mapper
+=============
+
+Es un patrón que permite abstraer entidades de dominio (asociadas a tablas de base de datos) a una capa lógica para objetos de transferencia de datos (DTO) o viceversa.
+
+Ej. (de DTO a entidad de dominio):
+
+movie-db.responses.ts:
+
+// origen
+export interface Result {
+  adult: boolean;
+  backdrop_path: string;
+  genre_ids: number[];
+  id: number;
+  original_language: string;
+  original_title: string;
+  overview: string;
+  popularity: number;
+  poster_path: string;
+  release_date: string;
+  title: string;
+  video: boolean;
+  vote_average: number;
+  vote_count: number;
+}
+
+movie.entity.ts:
+
+// destino
+export interface Movie {
+  id: number;
+  title: string;
+  description: string;
+  releaseDate: Date;
+  rating: number;
+  poster: string;
+  backdrop: string;
+}
+
+movie.mapper.ts:
+
+// mapper
+import {Movie} from '../../core/entities/movie.entity';
+import type {Result} from '../interfaces/movie-db.responses';
+
+export class MovieMapper {
+  static fromMovieDBResultToEntity(result: Result): Movie {
+    return {
+      id: result.id,
+      title: result.title,
+      description: result.overview,
+      releaseDate: new Date(result.release_date),
+      rating: result.vote_average,
+      poster: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+      backdrop: `https://image.tmdb.org/t/p/w500${result.backdrop_path}`,
+    };
+  }
+}
+
+Uso del movie.mapper.ts (caso de uso)
+
+now-playing.use-case.ts:
+
+import {HttpAdapter} from '../../../config/adapters/http/http.adapter';
+import {NowPlayingResponse} from '../../../infrastructure/interfaces/movie-db.responses';
+import {MovieMapper} from '../../../infrastructure/mappers/movie.mapper';
+import type {Movie} from '../../entities/movie.entity';
+
+export const moviesNowPlayingUseCase = async (
+  fetcher: HttpAdapter,
+): Promise<Movie[]> => {
+  try {
+    const nowPlaying = await fetcher.get<NowPlayingResponse>('/now_playing');
+
+    return nowPlaying.results.map(MovieMapper.fromMovieDBResultToEntity);
+  } catch (error) {
+    console.log(error);
+    throw new Error('Error fetching movies - NowPlaying');
+  }
+};
+
+
+

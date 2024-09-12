@@ -1,0 +1,1159 @@
+React Native (RN) + TypeScript 2024
+***********************************
+
+General
+=======
+
+Configurar Android Studio
+-------------------------
+
+Instalar y configurar Android Studio.
+
+Escoger More actions -> SDK Manager, escoger los ítems:
+
+- Android SDK Platform 34
+- Intel x86 Atom_64 System Image o Google APIs Intel x86 Atom System Image
+
+Clic en Apply para descargar.
+
+Agregar variable de entorno ANDROID_HOME (para usuario):
+
+- Linux: $ANDROID_HOME=${ruta de Android Studio}/Android/sdk
+- Windows: C:\Users\MiUsuario\AppData\Local\Android\sdk
+
+En ese nivel, modificar Path agregando: %LOCALAPPDATA%\Android\Sdk\platform-tools (Windows)
+
+Usar dispositivo físico
+-----------------------
+
+Conectar vía USB el dispositivo a la laptop y habilitar Opciones de desarrollador y Modo de depuración desde el dispositivo (Android o iOS).
+Verificar si hay un dispositivo conectado con "adb devices":
+
+...\ProyectoPrueba> adb devices
+List of devices attached
+L7FMRGS89HJ7J7LF        device
+
+Configurar el dispositivo físico según marca y modelo. Para problemas iniciales con Xiaomi: https://stackoverflow.com/questions/47239251/install-failed-user-restricted-android-studio-using-redmi-4-device
+
+Crear proyecto
+--------------
+
+En caso de haberse instalado globalmente React Native CLI, ejecutar este comando:
+
+npm uninstall -g react-native-cli @react-native-community/cli
+
+Para crear proyecto:
+
+npx @react-native-community/cli@latest init MiProyecto
+
+Ej: 
+npx @react-native-community/cli@latest init MiProyecto
+
+Verificar posibles errores: npx react-native doctor (dentro del proyecto creado)
+
+Ejecutar proyecto:
+
+npx react-native start o npm start y escoger "a" para ejecutar en Android.
+
+Si ocurre la excepción java.io.UncheckedIOException:
+1. En android/gradle.properties editar lo siguiente:
+
+Reemplazar
+
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+
+por
+
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+
+Descomentar:
+
+org.gradle.parallel=true
+
+y debajo de esa línea agregar:
+
+org.gradle.daemon=true
+org.gradle.configureondemand=true
+
+2. Limpiar con Gradle:
+cd android
+.\gradlew clean (Windows)
+./gradlew clean (Mac o Unix/Linux)
+
+Ejecutar npm start y escoger Android (pulsar "a") o npm run android.
+
+3. Si persiste el error, abrir con Android Studio la carpeta android y sincronizar el contenido de Gradle (y dejar que se indexen los archivos de Gradle).
+
+Expo
+====
+
+npx create-expo-app@latest
+
+
+Componentes
+===========
+
+A diferencia de HTML (que usa React), en React Native se tienen principalmente los siguientes componentes:
+
+* View
+* Text
+* ScrollView
+* FlatList
+* TextInput
+* StyleSheet
+* Image
+* Button
+* TouchableOpacity (alternativa a Button)
+* Switch (botón de interrupción)
+* ActivityIndicator
+* StatusBar
+* Modal
+
+Todos los componentes están en su documentación: https://reactnative.dev/docs/components-and-apis
+
+Ejemplo de "Hello world"
+------------------------
+
+App.tsx:
+
+import { SafeAreaView } from 'react-native';
+import { HelloWorldScreen } from './src/presentation/screens/HelloWorldScreen';
+
+
+import IonIcon from 'react-native-vector-icons/Ionicons'
+
+
+export const App = () => {
+  return (
+    <SafeAreaView style={{ flex: 1}}>
+      <HelloWorldScreen name='Fernando Herrera' />
+    </SafeAreaView>
+  )
+}
+
+HelloWorldScreen.tsx:
+
+import {View, Text, StyleSheet} from 'react-native';
+
+interface Props {
+  name?: string;
+}
+
+export const HelloWorldScreen = ({name = 'World'}: Props) => {
+  return (
+    <View style={styles.container}>
+      <Text numberOfLines={1} ellipsizeMode="tail" style={styles.title}>
+        Hello, {name}
+      </Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 45,
+    textAlign: 'center',
+    color: 'black',
+    padding: 20,
+  },
+});
+
+Ejemplo basado en el contador clásico de React
+----------------------------------------------
+
+App.tsx:
+
+import { SafeAreaView } from 'react-native';
+import { CounterScreen } from './src/presentation/screens/CounterScreen';
+
+
+import IonIcon from 'react-native-vector-icons/Ionicons'
+
+
+export const App = () => {
+  return (
+    <SafeAreaView style={{ flex: 1}}>
+      <CounterScreen />
+    </SafeAreaView>
+  )
+}
+
+CounterScreen.tsx:
+
+import {useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
+import {PrimaryButton} from '../components';
+import {Button} from 'react-native-paper';
+
+export const CounterScreen = () => {
+  const [count, setCount] = useState(10);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{count}</Text>
+
+      <Button
+        onPress={() => setCount(count + 1)}
+        onLongPress={() => setCount(0)}
+        mode="contained">
+        Incrementar
+      </Button>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 80,
+    color: 'black',
+    fontWeight: '300',
+  },
+});
+
+Conceptos de diseño en React Native
+===================================
+
+BOM (Box Object Model)
+----------------------
+Concepto análogo del DOM para el desarrollo en entorno móvil.
+
+Dimensionamiento de objetos
+---------------------------
+
+- El bloque agrupador primario es el View, el símil del div.
+- El símil de un archivo CSS es un objeto JS/TS del tipo StyleSheet. Al igual que en CSS, existe el padding, margin, left, right, top, bottom, y demás términos de dimensionamiento.
+
+Ej:
+
+import {StyleSheet, Text, View} from 'react-native';
+
+export const BoxObjectModelScreen = () => {
+  return (
+    <View style={styles.container}>
+      <View style={styles.purpleBox}>
+        <Text style={{color: 'white'}}>Hola mundo</Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'red',
+  },
+  title: {
+    fontSize: 30,
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+
+    borderWidth: 10,
+  },
+
+  purpleBox: {
+    height: 30,
+    backgroundColor: 'purple',
+    marginHorizontal: 20,
+    marginVertical: 50,
+    padding: 5,
+  },
+});
+
+Obtener dimensiones de la ventana
+---------------------------------
+
+Con la clase Dimensions:
+
+import { Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+Con un hook especializado:
+
+import { useWindowDimensions } from 'react-native';
+
+const { width, height } = useWindowDimensions();
+
+
+Posiciones absoluta y relativa de elementos
+-------------------------------------------
+
+- Mismo concepto que en CSS: absoluta tiene que ver con la posición dependiente del elemento padre y relativa está relacionado a la posición original en la pantalla del elemento.
+
+Flexbox
+-------
+
+Usa el mismo concepto del Flexbox en CSS, con algunas salvedades:
+- Por defecto, agrupa en columna en lugar de fila.
+- El parámetro flex solo requiere un parámetro numérico.
+Otras diferencias y diferencias aquí: https://reactnative.dev/docs/flexbox
+
+
+Ruteo con React Navigation
+==========================
+
+Instalación
+-----------
+npm i @react-navigation/native
+
+npm install react-native-gesture-handler react-native-reanimated
+Para Expo: npx expo install react-native-gesture-handler react-native-reanimated
+
+Componentes de React Navigation
+-------------------------------
+npm install react-native-screens react-native-safe-area-context
+
+Expo: npx expo install react-native-screens react-native-safe-area-context
+
+
+Para Android
+------------
+En .\android\app\src\main\java\com\navigationapp\MainActivity.java al inicio de la clase MainActivity:
+
+import android.os.Bundle; // agregar
+
+public class MainActivity extends ReactActivity {
+  // ...
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(null);
+  }
+  // ...
+}
+
+Si se genera en Kotlin:
+
+import android.os.Bundle // agregar
+
+class MainActivity: ReactActivity() {
+  // ...
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+  }
+  // ...
+}
+
+Editar babel.config.js
+----------------------
+
+module.exports = {
+  presets: ['module:metro-react-native-babel-preset'],
+  plugins: ['react-native-reanimated/plugin'], // agregar
+};
+
+
+Importar el provider de React Navigation
+----------------------------------------
+
+En App.tsx:
+
+import 'react-native-gesture-handler';
+
+import { NavigationContainer } from '@react-navigation/native';
+// import { StackNavigator } from './presentation/routes/StackNavigator';
+import { SideMenuNavigator } from './presentation/routes/SideMenuNavigator';
+import { BottomTabNavigator } from './presentation/routes/BottomTabsNavigator';
+
+export const App = () => {
+  return (
+    <NavigationContainer>
+      <StackNavigator />
+    </NavigationContainer>
+  )
+}
+
+Aquí el View inicial es reemplazado por NavigationContainer.
+
+Recomendación de React Native sobre react-native-gesture-handler
+----------------------------------------------------------------
+
+1. Crear 2 archivos: gesture-handler.native.js y gesture-handler.js, e importar gesture-handler desde index.ts o App.tsx (o js y jsx, respectivamente):
+
+import './gesture-handler';
+
+Expo: npx expo install react-native-gesture-handler
+
+2. Solo llenar el archivo gesture-handler.native.js con el siguiente contenido:
+
+import 'react-native-gesture-handler';
+
+
+Formas de la navegación
+-----------------------
+- Stack
+- Drawer
+- Tabs
+
+Stack Navigation
+----------------
+npm install @react-navigation/native-stack
+
+Uso:
+
+StackNavigator.tsx:
+
+import { createStackNavigator } from '@react-navigation/stack';
+import { HomeScreen } from '../screens/home/HomeScreen';
+import { ProductsScreen } from '../screens/products/ProductsScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
+import { ProductScreen } from '../screens/products/ProductScreen';
+import { useNavigation } from '@react-navigation/core';
+import { useEffect } from 'react';
+
+export type RootStackParams = {
+  Home: undefined,
+  Product: { id: number, name: string },
+  Products: undefined,
+  Settings: undefined,
+}
+
+const Stack = createStackNavigator<RootStackParams>();
+
+export const StackNavigator = () => {
+
+  const navigator = useNavigation();
+
+  useEffect(() => {
+    navigator.setOptions({
+      headerShown: false,
+    });
+  
+  }, [])
+  
+  return (
+    <Stack.Navigator screenOptions={ {
+      headerShown: true,
+      headerStyle: {
+        elevation: 0,
+        shadowColor: 'transparent'
+      }
+    } }>
+      <Stack.Screen name="Home" component={ HomeScreen } />
+      <Stack.Screen name="Product" component={ ProductScreen } />
+      <Stack.Screen name="Products" component={ ProductsScreen } />
+      <Stack.Screen name="Settings" component={ SettingsScreen } />
+    </Stack.Navigator>
+  );
+};
+
+Drawer
+------
+Instalación: npm install @react-navigation/drawer
+
+Uso:
+
+SideMenuNavigator.tsx:
+
+import { View, useWindowDimensions } from 'react-native';
+import { createDrawerNavigator, DrawerContentComponentProps, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { globalColors } from '../theme/theme';
+import { BottomTabNavigator } from './BottomTabsNavigator';
+import { IonIcon } from '../components/shared/IonIcon';
+
+
+
+const Drawer = createDrawerNavigator();
+
+export const SideMenuNavigator = () => {
+
+
+  const dimensions = useWindowDimensions();
+
+  return (
+    <Drawer.Navigator 
+
+      drawerContent={ (props) => <CustomDrawerContent {...props} /> }
+
+
+      screenOptions={{
+        drawerType: (dimensions.width >= 758) ? 'permanent' : 'slide',
+
+
+        headerShown: false,
+
+        drawerActiveBackgroundColor: globalColors.primary,
+        drawerActiveTintColor: 'white',
+        drawerInactiveTintColor: globalColors.primary,
+        drawerItemStyle: {
+          borderRadius: 100,
+          paddingHorizontal: 20
+        }
+      }}
+    >
+      <Drawer.Screen 
+        options={{ drawerIcon: ({ color }) => ( <IonIcon name="bonfire-outline" color={ color } /> ) }}  
+        name="Tabs" component={ BottomTabNavigator } />
+
+      <Drawer.Screen 
+        options={{ drawerIcon: ({ color }) => ( <IonIcon name="person-circle-outline" color={ color } /> ) }}  
+        name="Profile" component={ ProfileScreen } />
+    </Drawer.Navigator>
+  );
+}
+
+const CustomDrawerContent = (props: DrawerContentComponentProps ) => {
+  return (
+    <DrawerContentScrollView>
+      <View 
+        style={{
+          height: 200,
+          backgroundColor: globalColors.primary,
+          margin: 30,
+          borderRadius: 50
+        }}
+      />
+
+      <DrawerItemList { ...props } />
+
+    </DrawerContentScrollView>
+  )
+}
+
+App.tsx:
+
+import 'react-native-gesture-handler';
+
+import { NavigationContainer } from '@react-navigation/native';
+import { SideMenuNavigator } from './presentation/routes/SideMenuNavigator';
+import { BottomTabNavigator } from './presentation/routes/BottomTabsNavigator';
+
+export const App = () => {
+  return (
+    <NavigationContainer>
+      <SideMenuNavigator />
+    </NavigationContainer>
+  )
+}
+
+Bottom Tab
+----------
+Instalación: npm install @react-navigation/bottom-tabs
+
+Uso:
+
+BottomTabNavigator.tsx:
+
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+
+import { Tab1Screen } from '../screens/tabs/Tab1Screen';
+import { globalColors } from '../theme/theme';
+import { TopTabsNavigator } from './TopTabsNavigator';
+import { StackNavigator } from './StackNavigator';
+import { IonIcon } from '../components/shared/IonIcon';
+
+
+const Tab = createBottomTabNavigator();
+
+
+
+export const BottomTabNavigator = () => {
+  return (
+    <Tab.Navigator
+      sceneContainerStyle={{
+        backgroundColor: globalColors.background,
+      }}
+      screenOptions={{
+        tabBarActiveTintColor: globalColors.primary,
+        tabBarLabelStyle: {
+          marginBottom: 5,
+        },
+        headerStyle: {
+          elevation: 0,
+          borderColor: 'transparent',
+          shadowColor: 'transparent'
+        },
+        tabBarStyle: {
+          borderTopWidth: 0,
+          elevation: 0
+        }
+      }}
+    >
+      <Tab.Screen 
+        name="Tab1" 
+        options={{ title:'Tab1', tabBarIcon: ({ color }) => ( <IonIcon name="accessibility-outline" color={ color } /> ) }} 
+        component={ Tab1Screen } />
+
+      <Tab.Screen 
+        name="Tab2" 
+        options={{ title:'Tab2', tabBarIcon: ({ color }) => ( <IonIcon name="airplane-outline" color={ color } /> ) }} 
+        component={ TopTabsNavigator } />
+
+      <Tab.Screen 
+        name="Tab3" 
+        options={{ title:'Tab3', tabBarIcon: ({ color }) => ( <IonIcon name="bar-chart-outline" color={ color } /> ) }} 
+        component={ StackNavigator } />
+
+    </Tab.Navigator>
+  );
+};
+
+App.tsx:
+
+import 'react-native-gesture-handler';
+
+import { NavigationContainer } from '@react-navigation/native';
+import { SideMenuNavigator } from './presentation/routes/SideMenuNavigator';
+import { BottomTabNavigator } from './presentation/routes/BottomTabsNavigator';
+
+export const App = () => {
+  return (
+    <NavigationContainer>
+      <BottomTabNavigator />
+    </NavigationContainer>
+  )
+}
+
+Material Top Tab
+----------------
+Instalación (CLI): npm install @react-navigation/material-top-tabs react-native-tab-view
+
+npm install react-native-pager-view
+Expo: npx expo install react-native-pager-view
+
+Uso:
+
+TopTabsNavigator.tsx:
+
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { AboutScreen } from '../screens/about/AboutScreen';
+import { HamburgerMenu } from '../components/shared/HamburgerMenu';
+
+const Tab = createMaterialTopTabNavigator();
+ 
+export const TopTabsNavigator = () => {
+  return (
+    <>
+      <HamburgerMenu />
+      <Tab.Navigator>
+        <Tab.Screen name="Perfil" component={ ProfileScreen } />
+        <Tab.Screen name="About" component={ AboutScreen } />
+      </Tab.Navigator>
+    </>
+  );
+};
+
+
+Nota
+----
+
+Si ocurre un problema al cargar la aplicación, salir y ejecutar: npx react-native start resetCache
+
+Manejo de permisos en Android
+=============================
+
+Paquete de permisos para configurar fácilmente: npm i react-native-permissions
+
+Configurar android/app/src/main/AndroidManifest.xml
+---------------------------------------------------
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<!-- Permisos -->
+    <uses-permission android:name="android.permission.INTERNET" />
+	
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <application
+      android:name=".MainApplication"...
+
+Crear acciones para el manejo de permisos
+-----------------------------------------
+
+interfaces/permissions.ts:
+
+export type PermissionStatus = 'granted' | 'denied' | 'blocked' | 'limited' | 'unavailable' | 'undetermined';
+
+permissions/location.ts:
+
+import {
+  check,
+  openSettings,
+  PERMISSIONS,
+  request,
+  PermissionStatus as RNPermissionStatus,
+} from 'react-native-permissions';
+import type {PermissionStatus} from '../../infrastructure/interfaces/permissions';
+import {Platform} from 'react-native';
+
+export const requestLocationPermission =
+  async (): Promise<PermissionStatus> => {
+    let status: RNPermissionStatus = 'unavailable';
+
+    if (Platform.OS === 'ios') {
+      status = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+    } else if (Platform.OS === 'android') {
+      status = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+    } else {
+      throw new Error('Plataforma no soportada');
+    }
+
+    if (status === 'blocked') {
+      await openSettings();
+      return await checkLocationPermission();
+    }
+
+    const permissionMapper: Record<RNPermissionStatus, PermissionStatus> = {
+      granted: 'granted',
+      denied: 'denied',
+      blocked: 'blocked',
+      unavailable: 'unavailable',
+      limited: 'limited',
+    };
+
+    return permissionMapper[status] ?? 'unavailable';
+  };
+
+export const checkLocationPermission = async (): Promise<PermissionStatus> => {
+  let status: RNPermissionStatus = 'unavailable';
+
+  if (Platform.OS === 'ios') {
+    status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+  } else if (Platform.OS === 'android') {
+    status = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+  } else {
+    throw new Error('Plataforma no soportada');
+  }
+
+  const permissionMapper: Record<RNPermissionStatus, PermissionStatus> = {
+    granted: 'granted',
+    denied: 'denied',
+    blocked: 'blocked',
+    unavailable: 'unavailable',
+    limited: 'limited',
+  };
+
+  return permissionMapper[status] ?? 'unavailable';
+};
+
+Gestionar a nivel de aplicación los permisos a definir (Zustand)
+----------------------------------------------------------------
+
+usePermissionStore.ts:
+
+import {create} from 'zustand';
+import type {PermissionStatus} from '../../../infrastructure/interfaces/permissions';
+import {checkLocationPermission, requestLocationPermission} from '../../../actions/permissions/location';
+
+interface PermissionsState {
+  locationStatus: PermissionStatus;
+  requestLocationPermission: () => Promise<PermissionStatus>;
+  checkLocationPermission: () => Promise<PermissionStatus>;
+}
+
+export const usePermisionStore = create<PermissionsState>()(set => ({
+  locationStatus: 'undetermined',
+
+  requestLocationPermission: async () => {
+    const status = await requestLocationPermission();
+    set({locationStatus: status});
+    return status;
+  },
+
+  checkLocationPermission: async () => {
+    const status = await checkLocationPermission();
+    set({locationStatus: status});
+    return status;
+  },
+}));
+
+Consumir store de permisos
+--------------------------
+
+providers/PermissionsChecker.tsx:
+
+import React, {PropsWithChildren, useEffect} from 'react';
+import {AppState} from 'react-native';
+import {usePermisionStore} from '../store/permissions/usePermissionStore';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {RootStackParams} from '../navigation/StackNavigator';
+
+export const PermissionsChecker = ({children}: PropsWithChildren) => {
+  const {locationStatus, checkLocationPermission} = usePermisionStore();
+  const navigation = useNavigation<NavigationProp<RootStackParams>>();
+
+  useEffect(() => {
+    if (locationStatus === 'granted') {
+      navigation.reset({
+        routes: [{name: 'MapScreen'}],
+      });
+    } else if (locationStatus !== 'undetermined') {
+      navigation.reset({
+        routes: [{name: 'PermissionsScreen'}],
+      });
+    }
+  }, [locationStatus]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        checkLocationPermission();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  return <>{children}</>;
+};
+
+screen/PermissionsScreen.tsx:
+
+import React from 'react'
+import { Pressable, Text, View } from 'react-native'
+import { globalStyles } from '../../../config/theme/styles'
+import { usePermisionStore } from '../../store/permissions/usePermissionStore'
+
+export const PermisionsScreen = () => {
+  const {locationStatus, requestLocationPermission} = usePermisionStore();
+
+  return (
+    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text>Habilitar ubicación</Text>
+
+        <Pressable
+          style={globalStyles.btnPrimary}
+          onPress={requestLocationPermission}
+        >
+          <Text style={{color: 'white'}}>Habilitar localización</Text>
+        </Pressable>
+        <Text>Estado actual: {locationStatus}</Text>
+    </View>
+  )
+}
+
+
+Editar el AndroidManifest nuevamente para asignar la clave API_KEY de Google
+----------------------------------------------------------------------------
+
+AndroidManifest.xml:
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    ...
+      <activity
+        android:name=".MainActivity"
+        android:label="@string/app_name"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+        android:launchMode="singleTask"
+        android:windowSoftInputMode="adjustResize"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+      </activity>
+	  
+      <!-- Obtener API_KEY de Google Maps -->
+      <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyBbQVSwtaj-F5emZyaktsn8hMBdlJ1NJmg"/>
+	
+    </application>
+</manifest>
+
+
+Instalar React Native Maps
+--------------------------
+
+npm install react-native-maps
+
+Usar react-native-maps:
+
+Map.tsx:
+
+import React, {useEffect, useRef, useState} from 'react';
+import {Platform, StyleSheet} from 'react-native';
+import MapView, {PROVIDER_GOOGLE, Marker, Polyline} from 'react-native-maps';
+import {Location} from '../../../infrastructure/interfaces/location';
+import {FAB} from '../ui/FAB';
+import {useLocationStore} from '../../store/location/useLocationStore';
+
+interface Props {
+  showsUserLocation?: boolean;
+  initialLocation: Location;
+}
+
+export const Map = ({showsUserLocation = true, initialLocation}: Props) => {
+  const mapRef = useRef<MapView>();
+  const cameraLocation = useRef<Location>(initialLocation);
+  const [isFollowingUser, setIsFollowingUser] = useState(true);
+  const [isShowingPolyline, setIsShowingPolyline] = useState(true);
+
+  const {
+    getLocation,
+    lastKnownLocation,
+    watchLocation,
+    clearWatchLocation,
+    userLocationList,
+  } = useLocationStore();
+
+  const moveCameraToLocation = (location: Location) => {
+    if (!mapRef.current) return;
+    mapRef.current.animateCamera({center: location});
+  };
+
+  const moveToCurrentLocation = async () => {
+    if (!lastKnownLocation) {
+      moveCameraToLocation(initialLocation);
+    }
+    const location = await getLocation();
+    if (!location) return;
+    moveCameraToLocation(location);
+  };
+
+  useEffect(() => {
+    watchLocation();
+
+    return () => {
+      clearWatchLocation();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (lastKnownLocation && isFollowingUser) {
+      moveCameraToLocation(lastKnownLocation);
+    }
+  }, [lastKnownLocation, isFollowingUser]);
+
+  return (
+    <>
+      <MapView
+        ref={map => (mapRef.current = map!)}
+        showsUserLocation={showsUserLocation}
+        provider={Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE} // remove if not using Google Maps
+        style={{flex: 1, ...StyleSheet.absoluteFillObject}}
+        onTouchStart={() => setIsFollowingUser(false)}
+        region={{
+          latitude: cameraLocation.current.latitude,
+          longitude: cameraLocation.current.longitude,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.0121,
+        }}>
+        {isShowingPolyline && (
+          <Polyline
+            coordinates={userLocationList}
+            strokeColor="black"
+            strokeWidth={5}
+          />
+        )}
+        {/* <Marker
+          coordinate={{
+            latitude: 37.78825,
+            longitude: -122.4324,
+          }}
+          title='Prueba'
+          description='Ubicación de prueba'
+        /> */}
+      </MapView>
+      <FAB
+        iconName={isShowingPolyline ? 'eye-outline' : 'eye-off-outline'}
+        onPress={() => setIsShowingPolyline(!isShowingPolyline)}
+        style={{
+          bottom: 140,
+          right: 20,
+        }}
+      />
+
+      <FAB
+        iconName={isFollowingUser ? 'walk-outline' : 'accessibility-outline'}
+        onPress={() => setIsFollowingUser(!isFollowingUser)}
+        style={{
+          bottom: 80,
+          right: 20,
+        }}
+      />
+
+      <FAB
+        iconName="compass-outline"
+        onPress={moveToCurrentLocation}
+        style={{
+          bottom: 20,
+          right: 20,
+        }}
+      />
+    </>
+  );
+};
+
+Acciones de geolocalización
+---------------------------
+
+Instalar: npm i @react-native-community/geolocation
+
+Definir acciones:
+
+actions/location/location.ts:
+
+import Geolocation from '@react-native-community/geolocation';
+import { Location } from '../../infrastructure/interfaces/location';
+
+export const getCurrentLocation = async () => {
+    return new Promise<Location> (
+        (resolve, reject) => {
+            Geolocation.getCurrentPosition(
+                (info) => {
+                    resolve({
+                        latitude: info.coords.latitude,
+                        longitude: info.coords.longitude,
+                    })
+                },
+                (error) => {
+                    console.log(`Error al obtener posición: ${error}`);
+                    reject(error);
+                },
+                {
+                    enableHighAccuracy: true,
+                }
+            );
+        }
+    );
+}
+
+export const watchCurrentLocation = (
+    locationCallback: (location: Location) => void,
+  ): number => {
+    return Geolocation.watchPosition( info => (
+  
+      locationCallback({
+        latitude: info.coords.latitude,
+        longitude: info.coords.longitude,
+      })
+  
+  
+    ), (error) => {
+      throw new Error(`Can't get watchPosition`);
+    }, {
+      enableHighAccuracy: true,
+    });
+  };
+  
+  
+  export const clearWatchLocation = (watchId: number) => {
+    Geolocation.clearWatch(watchId);
+  }
+  
+Gestionar estados de geolocalización
+------------------------------------
+
+import {create} from 'zustand';
+import {Location} from '../../../infrastructure/interfaces/location';
+import {
+  clearWatchLocation,
+  getCurrentLocation,
+  watchCurrentLocation,
+} from '../../../actions/location/location';
+
+interface LocationState {
+  lastKnownLocation: Location | null;
+  userLocationList: Location[];
+  watchId: number | null;
+
+  getLocation: () => Promise<Location | null>;
+  watchLocation: () => void;
+  clearWatchLocation: () => void;
+}
+
+export const useLocationStore = create<LocationState>()((set, get) => ({
+  lastKnownLocation: null,
+  userLocationList: [],
+  watchId: null,
+
+  getLocation: async () => {
+    const location = await getCurrentLocation();
+    set({lastKnownLocation: location});
+    return location;
+  },
+
+  watchLocation: () => {
+    const watchId = get().watchId;
+    if (watchId !== null) {
+      get().clearWatchLocation();
+    }
+
+    const id = watchCurrentLocation(location => {
+      set({
+        lastKnownLocation: location,
+        userLocationList: [...get().userLocationList, location],
+      });
+    });
+
+    set({watchId: id});
+  },
+
+  clearWatchLocation: () => {
+    const watchId = get().watchId;
+    if (watchId !== null) {
+      clearWatchLocation(watchId);
+    }
+  },
+}));
+
+Implementar en pantalla
+-----------------------
+
+import React, { useEffect } from 'react';
+import {StyleSheet, View} from 'react-native';
+import { Map } from '../../components/maps/Map';
+import { useLocationStore } from '../../store/location/useLocationStore';
+import { LoadingScreen } from '../loading/LoadingScreen';
+
+export const MapScreen = () => {
+  const {lastKnownLocation, getLocation}  = useLocationStore();
+
+  useEffect(() => {
+    if(lastKnownLocation === null){
+      getLocation();
+    }
+  }, [])
+  
+
+  if(lastKnownLocation === null){
+    return (<LoadingScreen />);
+  }
+  return (
+    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+      <Map initialLocation={lastKnownLocation} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    height: 400,
+    width: 400,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+});
+
+
+Exportar aplicación a archivo Android
+=====================================
+
+cd android
+.\gradlew clean
+.\gradlew assembleRelease
+cd ..
+
+La ruta de salida es en android/app/build/outputs/apk/release y por defecto tiene el nombre apk-release.apk
+
+
+
+

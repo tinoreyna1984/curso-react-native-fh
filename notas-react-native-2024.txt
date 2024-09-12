@@ -862,7 +862,7 @@ AndroidManifest.xml:
       <!-- Obtener API_KEY de Google Maps -->
       <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyBbQVSwtaj-F5emZyaktsn8hMBdlJ1NJmg"/>
+        android:value="maps_api_key"/>
 	
     </application>
 </manifest>
